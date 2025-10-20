@@ -1,3 +1,5 @@
+import java.util.LinkedList;
+
 public class PCB { // Process Control Block
     private static int nextPid = 1;
     public int pid;
@@ -6,6 +8,13 @@ public class PCB { // Process Control Block
     private long wakeTime = 0; //wake up!
     public int timeoutCount = 0;
     public int[] deviceIds = new int[10];
+    public String name;
+    public LinkedList<KernelMessage> messageQueue = new LinkedList<>();
+
+    public PCB(UserlandProcess ulp, int pid) {
+        this.pid = pid;
+        this.name = ulp.getClass().getSimpleName(); //ping
+    }
 
     PCB(UserlandProcess up, OS.PriorityType priority) {
         this(); //call default constructor -> do deviceIds initiation first
@@ -45,7 +54,7 @@ public class PCB { // Process Control Block
     }
 
     public String getName() {
-        return null;
+        return this.name;
     }
 
     public UserlandProcess getProcess() {

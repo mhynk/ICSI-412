@@ -156,7 +156,12 @@ public class Kernel extends Process implements Device {
     }
 
     private int GetPidByName(String name) {
-        return 0; // change this
+        for (PCB pcb : pidTable.values()) {
+            if (pcb.getName().equals(name)) {
+                return pcb.getPid();
+            }
+        }
+        return -1;
     }
 
     private void GetMapping(int virtualPage) {
