@@ -33,6 +33,58 @@ public class Scheduler {
         }, 250, 250);
     }
 
+    public PCB getNextProcess() {
+        if (!realTimeQueue.isEmpty()) {
+            return realTimeQueue.removeFirst();
+        }
+        else if (!interactiveQueue.isEmpty()) {
+            return interactiveQueue.removeFirst();
+        }
+        else if (!backgroundQueue.isEmpty()) {
+            return backgroundQueue.removeFirst();
+        }
+        else {
+            return idleProcessPCB;
+        }
+    }
+
+    public void setIdleProcess (PCB pcb) {
+        this.idleProcessPCB = pcb;
+    }
+
+    public PCB getIdleProcess() {
+        return idleProcessPCB;
+    }
+
+    public void blockCurrentProcess() {
+        if (currentlyRunning != null) {
+            currentlyRunning.isWaitingForMessage = true;
+            currentlyRunning = null;
+            SwitchProcess();
+        }
+    }
+
+    public void addProcess(PCB pcb) {
+        switch (pcb.getPriority()){
+            case realtime -> realTimeQueue.add(pcb);
+            case interactive -> interactiveQueue.add(pcb);
+            case background -> backgroundQueue.add(pcb);
+        }
+
+        if(currentlyRunning == null) {
+            SwitchProcess();
+        }
+    }
+
+    public void makeRunnable(PCB p) {
+        p.isWaitingForMessage = false;
+        switch(p.getPriority()) {
+            case realtime -> realTimeQueue.add(p);
+            case interactive -> interactiveQueue.add(p);
+            case background -> backgroundQueue.add(p);
+        }
+    }
+
     public int CreateProcess(UserlandProcess up, OS.PriorityType p) {
         PCB pcb = new PCB(up, p);
 

@@ -1,3 +1,5 @@
+import java.util.LinkedList;
+
 public class PCB { // Process Control Block
     private static int nextPid = 1;
     public int pid;
@@ -6,12 +8,22 @@ public class PCB { // Process Control Block
     private long wakeTime = 0; //wake up!
     public int timeoutCount = 0;
     public int[] deviceIds = new int[10];
+    public String name;
+    public LinkedList<KernelMessage> messageQueue = new LinkedList<>();
+    public boolean isWaitingForMessage = false;
+
+    public PCB(UserlandProcess ulp, int pid) {
+        this.pid = pid;
+        this.name = ulp.getClass().getSimpleName(); //ping //KLP = Kernel Level Process(PCB)
+    }
 
     PCB(UserlandProcess up, OS.PriorityType priority) {
         this(); //call default constructor -> do deviceIds initiation first
         this.pid = nextPid++; //give Process IDentifier
         this.priority = priority;
         this.up = up;
+
+        this.name = up.getClass().getSimpleName();
         System.out.println("[PCB] Created PCB pid=" + this.pid +
                 " type=" + up.getClass().getSimpleName() +
                 " priority=" + priority);
@@ -45,7 +57,7 @@ public class PCB { // Process Control Block
     }
 
     public String getName() {
-        return null;
+        return this.name;
     }
 
     public UserlandProcess getProcess() {

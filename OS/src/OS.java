@@ -17,7 +17,7 @@ public class OS {
             ki.getScheduler().currentlyRunning.stop();
         }
 
-        if (currentCall != CallType.Exit) {
+        if (currentCall != CallType.Exit && currentCall != CallType.WaitForMessage) {
             if (retVal == null) {
                 while (retVal == null) {
                     try {
