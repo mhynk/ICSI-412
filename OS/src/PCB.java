@@ -22,6 +22,8 @@ public class PCB { // Process Control Block
         this.pid = nextPid++; //give Process IDentifier
         this.priority = priority;
         this.up = up;
+
+        this.name = up.getClass().getSimpleName();
         System.out.println("[PCB] Created PCB pid=" + this.pid +
                 " type=" + up.getClass().getSimpleName() +
                 " priority=" + priority);

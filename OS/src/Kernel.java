@@ -166,14 +166,31 @@ public class Kernel extends Process implements Device {
         }
     }
 
-    private int CreateProcess(UserlandProcess up, OS.PriorityType priority) {
+    /*private int CreateProcess(UserlandProcess up, OS.PriorityType priority) {
         //return scheduler.CreateProcess(up, priority);
         PCB pcb = new PCB(up, priority);
         addProcess(pcb);
 
-        if (up instanceof IdleProcess) {
+        /*if (up instanceof IdleProcess) {
             scheduler.setIdleProcess(pcb);
             System.out.println("[DEBUG] IdleProcess registered: PID=" + pcb.pid);
+        }
+
+        return pcb.pid;
+    }*/
+
+    private int CreateProcess(UserlandProcess up, OS.PriorityType priority) {
+        PCB pcb = new PCB(up, priority);
+        addProcess(pcb);
+
+        //IdleProcess는 오직 한 번만 등록
+        if (up instanceof IdleProcess) {
+            if (scheduler.getIdleProcess() == null) {
+                scheduler.setIdleProcess(pcb);
+                System.out.println("[DEBUG] IdleProcess registered: PID=" + pcb.pid);
+            } else {
+                System.out.println("[DEBUG] IdleProcess already exists, skipping re-registration");
+            }
         }
 
         return pcb.pid;
@@ -199,8 +216,11 @@ public class Kernel extends Process implements Device {
 
             if(target.isWaitingForMessage){
                 scheduler.makeRunnable(target);
+                target.isWaitingForMessage = false;
             }
+            scheduler.SwitchProcess();
         }
+        OS.retVal = 0;
     }
 
     private KernelMessage WaitForMessage() {
@@ -222,7 +242,7 @@ public class Kernel extends Process implements Device {
         return null;
     }
 
-    private int GetPidByName(String name) {
+    /*private int GetPidByName(String name) {
         if (name == null) {
             OS.retVal = -1;
             return -1;
@@ -238,7 +258,23 @@ public class Kernel extends Process implements Device {
 
         OS.retVal = -1;
         return -1;
+    }*/
+
+    private int GetPidByName(String name) {
+        if (name == null) return -1;
+
+        System.out.println("[DEBUG] pidTable keys: " + pidTable.keySet());
+        for (PCB pcb : pidTable.values()) {
+            if (pcb.getName() != null && pcb.getName().equalsIgnoreCase(name)) {
+                System.out.println("[DEBUG] Found " + name + " -> PID=" + pcb.getPid());
+                return pcb.getPid();
+            }
+        }
+
+        System.out.println("[DEBUG] Not found: " + name);
+        return -1;
     }
+
 
     private void GetMapping(int virtualPage) {
     }
