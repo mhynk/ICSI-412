@@ -183,7 +183,7 @@ public class Kernel extends Process implements Device {
         PCB pcb = new PCB(up, priority);
         addProcess(pcb);
 
-        //IdleProcess는 오직 한 번만 등록
+        // IdleProcess는 오직 한 번만 등록
         if (up instanceof IdleProcess) {
             if (scheduler.getIdleProcess() == null) {
                 scheduler.setIdleProcess(pcb);
