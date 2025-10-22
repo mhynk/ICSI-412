@@ -48,6 +48,10 @@ public class Scheduler {
         }
     }
 
+    public void setIdleProcess (PCB pcb) {
+        this.idleProcessPCB = pcb;
+    }
+
     public void blockCurrentProcess() {
         if (currentlyRunning != null) {
             currentlyRunning.isWaitingForMessage = true;

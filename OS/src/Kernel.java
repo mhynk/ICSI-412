@@ -46,16 +46,20 @@ public class Kernel extends Process implements Device {
                 case Seek -> Seek((int) OS.parameters.get(0), (int) OS.parameters.get(1));
                 case Write -> OS.retVal = Write((int) OS.parameters.get(0), (byte[]) OS.parameters.get(1));
 
-                    /*
-                    // Messages
-                    case GetPIDByName ->
-                    case SendMessage ->
-                    case WaitForMessage ->
-                    // Memory
-                    case GetMapping ->
-                    case AllocateMemory ->
-                    case FreeMemory ->
-                     */
+                // Messages
+                case GetPIDByName -> OS.retVal = GetPidByName((String) OS.parameters.get(0));
+                case SendMessage -> {
+                    SendMessage((KernelMessage) OS.parameters.get(0));
+                    OS.retVal = 0;
+                }
+                case WaitForMessage -> OS.retVal = WaitForMessage();
+
+                /*
+                // Memory
+                case GetMapping ->
+                case AllocateMemory ->
+                case FreeMemory ->
+                 */
             }
             // TODO: Now that we have done the work asked of us, start some process then go to sleep.
                 /*if (scheduler.currentlyRunning != null) {
@@ -166,6 +170,12 @@ public class Kernel extends Process implements Device {
         //return scheduler.CreateProcess(up, priority);
         PCB pcb = new PCB(up, priority);
         addProcess(pcb);
+
+        if (up instanceof IdleProcess) {
+            scheduler.setIdleProcess(pcb);
+            System.out.println("[DEBUG] IdleProcess registered: PID=" + pcb.pid);
+        }
+
         return pcb.pid;
     }
 
@@ -213,11 +223,20 @@ public class Kernel extends Process implements Device {
     }
 
     private int GetPidByName(String name) {
+        if (name == null) {
+            OS.retVal = -1;
+            return -1;
+        }
+
+        System.out.println("[DEBUG] pidTable keys: " + pidTable.keySet());
         for (PCB pcb : pidTable.values()) {
-            if (pcb.getName().equals(name)) {
+            if (pcb.getName() != null && pcb.getName().equalsIgnoreCase(name)) {
+                OS.retVal = pcb.getPid();
                 return pcb.getPid();
             }
         }
+
+        OS.retVal = -1;
         return -1;
     }
 

@@ -16,10 +16,11 @@ public class Ping extends UserlandProcess {
             OS.SendMessage(km);
 
             KernelMessage reply = OS.WaitForMessage();
-            if(reply != null) {
+            if (reply != null) {
                 System.out.println(" PING: from: " + reply.senderPid + " to: " + reply.receiverPid + " what: " + reply.what);
             }
         }
+
         OS.Exit();
     }
 }
