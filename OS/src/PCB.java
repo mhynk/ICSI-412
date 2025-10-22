@@ -10,10 +10,11 @@ public class PCB { // Process Control Block
     public int[] deviceIds = new int[10];
     public String name;
     public LinkedList<KernelMessage> messageQueue = new LinkedList<>();
+    public boolean isWaitingForMessage = false;
 
     public PCB(UserlandProcess ulp, int pid) {
         this.pid = pid;
-        this.name = ulp.getClass().getSimpleName(); //ping
+        this.name = ulp.getClass().getSimpleName(); //ping //KLP = Kernel Level Process(PCB)
     }
 
     PCB(UserlandProcess up, OS.PriorityType priority) {
