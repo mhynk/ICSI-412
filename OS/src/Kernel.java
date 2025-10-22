@@ -79,6 +79,7 @@ public class Kernel extends Process implements Device {
         PCB pcb = scheduler.getCurrentlyRunning();
         closeAll(pcb);
         scheduler.exitCurrentProcess();
+        scheduler.SwitchProcess();
     }
 
     private int GetPid() {
@@ -163,7 +164,7 @@ public class Kernel extends Process implements Device {
 
     private int CreateProcess(UserlandProcess up, OS.PriorityType priority) {
         //return scheduler.CreateProcess(up, priority);
-        PCB pcb = new PCB(up, nextPid++);
+        PCB pcb = new PCB(up, priority);
         addProcess(pcb);
         return pcb.pid;
     }
@@ -197,7 +198,9 @@ public class Kernel extends Process implements Device {
 
         //if message is here, just return it
         if(!current.messageQueue.isEmpty()){
-            return current.messageQueue.removeFirst();
+            KernelMessage msg = current.messageQueue.removeFirst();
+            OS.retVal = msg;
+            return msg;
         }
 
         //if message is not here : wait
@@ -205,6 +208,7 @@ public class Kernel extends Process implements Device {
         scheduler.blockCurrentProcess();
 
         //return null right after block
+        OS.retVal = null;
         return null;
     }
 

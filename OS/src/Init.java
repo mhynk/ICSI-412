@@ -28,6 +28,7 @@ public class Init extends UserlandProcess { //for cooperate
         //OS.CreateProcess(new DeviceTest(), OS.PriorityType.interactive);
 
         OS.CreateProcess(new Ping(), OS.PriorityType.interactive);
+        OS.Sleep(10);
         OS.CreateProcess(new Pong(), OS.PriorityType.interactive);
         OS.Exit();
     }
