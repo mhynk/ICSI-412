@@ -11,10 +11,14 @@ public class PCB { // Process Control Block
     public String name;
     public LinkedList<KernelMessage> messageQueue = new LinkedList<>();
     public boolean isWaitingForMessage = false;
+    public int[] pageTable = new int[100];
+
 
     public PCB(UserlandProcess ulp, int pid) {
         this.pid = pid;
         this.name = ulp.getClass().getSimpleName(); //ping //KLP = Kernel Level Process(PCB)
+        //initDeviceIds();
+        //initPageTable();
     }
 
     PCB(UserlandProcess up, OS.PriorityType priority) {
@@ -33,6 +37,10 @@ public class PCB { // Process Control Block
     public PCB() {
         for (int i = 0; i < deviceIds.length; i++) {
             deviceIds[i] = -1;
+        }
+
+        for (int i = 0; i < pageTable.length; i++) {
+            pageTable[i] = -1;
         }
     }
 
