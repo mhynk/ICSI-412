@@ -1,4 +1,5 @@
 import java.util.HashMap;
+import java.util.LinkedList;
 
 public class Kernel extends Process implements Device {
     private Scheduler scheduler;
@@ -7,10 +8,16 @@ public class Kernel extends Process implements Device {
     private int nextPid = 1;
     private PCB currentProcess;
     private boolean[] physicalUsed = new boolean[1024];
+    private LinkedList<Integer> freeList = new LinkedList<>();
 
     public Kernel() {
         super();
         scheduler = new Scheduler();
+
+        //initialize free list
+        for (int i = 0; i < 1024; i++) {
+            freeList.add(i);
+        }
     }
 
     //accessor!
@@ -167,19 +174,6 @@ public class Kernel extends Process implements Device {
         }
     }
 
-    /*private int CreateProcess(UserlandProcess up, OS.PriorityType priority) {
-        //return scheduler.CreateProcess(up, priority);
-        PCB pcb = new PCB(up, priority);
-        addProcess(pcb);
-
-        /*if (up instanceof IdleProcess) {
-            scheduler.setIdleProcess(pcb);
-            System.out.println("[DEBUG] IdleProcess registered: PID=" + pcb.pid);
-        }
-
-        return pcb.pid;
-    }*/
-
     private int CreateProcess(UserlandProcess up, OS.PriorityType priority) {
         PCB pcb = new PCB(up, priority);
         addProcess(pcb);
@@ -259,13 +253,14 @@ public class Kernel extends Process implements Device {
         return -1;
     }
 
-
     private void GetMapping(int virtualPage) {
         //bring the currently running process
         PCB pcb = scheduler.getCurrentlyRunning();
 
         //check virtual page availability
+        //check TLB hit
         if (virtualPage < 0 || virtualPage >= pcb.pageTable.length) {
+            System.out.println("Segfault : invalid virtual page");
             Exit();
             scheduler.SwitchProcess();
             return;
@@ -279,8 +274,10 @@ public class Kernel extends Process implements Device {
         }
 
         //find the empty physical page
+        //if TLB miss
         int physicalPage = findFreePhysicalPage();
         if (physicalPage == -1) {
+            System.out.println("Segfault : no free physical page");
             Exit();
             scheduler.SwitchProcess();
             return;
@@ -295,20 +292,22 @@ public class Kernel extends Process implements Device {
     }
 
     private int findFreePhysicalPage() {
-        for (int i = 0; i < physicalUsed.length; i++) {
-            if (!physicalUsed[i]) {
-                physicalUsed[i] = true;
-                return i;
-            }
+        if (freeList.isEmpty()) return -1;
+        return freeList.removeFirst();
+    }
+
+    private void freePhysicalPage(int pp) {
+        if (pp >= 0 && pp < 1024) {
+            freeList.add(pp);
         }
-        return -1;
     }
 
     private int AllocateMemory(int size) {
         PCB pcb = scheduler.getCurrentlyRunning();
         if (pcb == null || size <= 0) return -1;
-        int pageSize = 1024;
 
+        //set pageSize as 1024
+        int pageSize = 1024;
         //size is not multiple of 1024
         if (size % pageSize != 0) {
             return -1;
@@ -330,6 +329,7 @@ public class Kernel extends Process implements Device {
             }
         }
 
+        //can't find enough space
         if (startVirtual == -1 || count == numPages) {
             return -1;
         }
@@ -341,12 +341,14 @@ public class Kernel extends Process implements Device {
                 FreeMemory(startVirtual * pageSize, i * pageSize);
                 return -1;
             }
+            //mapping the found physical page into virtual
             pcb.pageTable[startVirtual + i] = pp;
+            //alert for using
             physicalUsed[pp] = true;
             Hardware.updateTLB(startVirtual + i, pp);
         }
 
-        return startVirtual * pageSize; //return virtual address
+        return startVirtual * pageSize; //return virtual address by byte
     }
 
     private boolean FreeMemory(int pointer, int size) {
@@ -369,7 +371,7 @@ public class Kernel extends Process implements Device {
             int pp = pcb.pageTable[vp];
             if (pp != -1) {
                 pcb.pageTable[vp] = -1;
-                physicalUsed[pp] = false;
+                freePhysicalPage(pp);
             }
         }
 
@@ -382,11 +384,11 @@ public class Kernel extends Process implements Device {
         for (int vp = 0; vp < currentlyRunning.pageTable.length; vp++) {
             int pp = currentlyRunning.pageTable[vp];
             if (pp != -1) {
-                //deallocate physical page
-                physicalUsed[pp] = false;
-
                 //eliminate virtual page mapping
                 currentlyRunning.pageTable[vp] = -1;
+
+                //deallocate physical page
+                freePhysicalPage(pp);
             }
         }
     }

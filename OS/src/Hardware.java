@@ -8,8 +8,8 @@ public class Hardware {
     //우와 이건 무슨 형태지..
     static {
         for(int i = 0; i < 2; i++) {
-            TLB[i][0] = 0;
-            TLB[i][1] = 0;
+            TLB[i][0] = -1;
+            TLB[i][1] = -1;
         }
     }
 
@@ -78,6 +78,7 @@ public class Hardware {
         memory[physicalAddress] = value;
     }
 
+    //choose one of the TLB entries and save into (VP, PP) shape
     public static void updateTLB(int virtualPageNum, int physicalPageNum) {
         //choose one entry by random (0 or 1)
         int index = (int) (Math.random() * 2);
