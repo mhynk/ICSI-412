@@ -8,16 +8,12 @@ public class Kernel extends Process implements Device {
     private int nextPid = 1;
     private PCB currentProcess;
     private boolean[] physicalUsed = new boolean[1024];
-    private LinkedList<Integer> freeList = new LinkedList<>();
+    //private LinkedList<Integer> freeList = new LinkedList<>();
 
     public Kernel() {
         super();
         scheduler = new Scheduler();
 
-        //initialize free list
-        for (int i = 0; i < 1024; i++) {
-            freeList.add(i);
-        }
     }
 
     //accessor!
@@ -292,13 +288,18 @@ public class Kernel extends Process implements Device {
     }
 
     private int findFreePhysicalPage() {
-        if (freeList.isEmpty()) return -1;
-        return freeList.removeFirst();
+        for (int i = 0; i < physicalUsed.length; i++) {
+            if (!physicalUsed[i]) {
+                physicalUsed[i] = true;
+                return i;
+            }
+        }
+        return -1;
     }
 
     private void freePhysicalPage(int pp) {
-        if (pp >= 0 && pp < 1024) {
-            freeList.add(pp);
+        if (pp >= 0 && pp < physicalUsed.length) {
+            physicalUsed[pp] = false;
         }
     }
 
