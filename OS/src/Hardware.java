@@ -5,7 +5,7 @@ public class Hardware {
     static int[][] TLB = new int[2][2];
     private static byte[] memory = new byte[1024 * 1024];
 
-    //우와 이건 무슨 형태지..
+    //static initializer
     static {
         for(int i = 0; i < 2; i++) {
             TLB[i][0] = -1;
@@ -13,14 +13,14 @@ public class Hardware {
         }
     }
 
-    //이 address는 virtual address임
+    //address = virtual address
     //LOAD
     public static byte Read(int address) {
         int pageSize = 1024;
         int virtualPageNum = address / pageSize;
         int pageOffset = address % pageSize;
 
-        //find mapping in TLB
+        //find mapping in TLB //hit
         int physicalPageNum = -1;
         for (int i = 0; i < 2; i++) {
             if (TLB[i][0] == virtualPageNum) {
