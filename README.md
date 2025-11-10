@@ -1,52 +1,71 @@
-#Java Operating System Simulator
+# Java Operating System Simulator
 
-A full-featured educational OS implemented from scratch in Java
+### A full-featured educational OS implemented from scratch in Java
 
-##Overview
+---
 
-Developed a complete operating system simulator in Java, modeling the core functions of modern OS design.
-Implemented process scheduling, device management, interprocess communication, and memory paging using object-oriented architecture within the JVM.
+## Overview
+**Java Operating System Simulator** is a fully functional educational OS built entirely in Java, designed to model the **core components of modern operating systems** within the JVM.  
+The project demonstrates **process scheduling, device management, interprocess communication (IPC), and memory paging** using an object-oriented architecture.
 
-##Key Features
+---
 
-###Kernel & Scheduler – Designed a cooperative multitasking system with priority-based scheduling and round-robin quantum switching.
+## Key Features
 
-###Process Management – Built a PCB (Process Control Block) system supporting process creation, switching, and termination.
+### Kernel & Scheduler  
+- Designed a **cooperative multitasking system** supporting  
+  - Priority-based scheduling  
+  - Round-robin quantum switching  
+- Simulated **context switching** and process lifecycle management  
 
-###Device Management (VFS) – Implemented a Virtual File System to handle abstract device operations (open, read, write, seek) with random and file-based devices.
+### Process Management  
+- Implemented a **Process Control Block (PCB)** architecture  
+- Supports **process creation**, **switching**, and **termination**  
+- Tracks CPU states, registers, and scheduling metadata  
 
-###Interprocess Communication – Added a message-passing API enabling asynchronous communication between userland processes.
+### Device Management (VFS)  
+- Built a **Virtual File System (VFS)** abstraction layer  
+- Unified API for `open`, `read`, `write`, `seek` operations  
+- Supports both **file-based and random-access devices**
 
-###Memory Management & Paging – Simulated a 1MB virtual memory system with 1KB pages, TLB caching, and kernel-level page allocation/freeing.
+### Interprocess Communication  
+- Implemented **asynchronous message-passing** between processes  
+- Designed `SendMessage()` and `WaitForMessage()` system calls  
+- Enables **userland-level IPC** via kernel-managed queues  
 
-###System Calls – Developed APIs (e.g., Sleep(), Exit(), SendMessage(), AllocateMemory()) bridging userland and kernelland interactions.
+### Memory Management & Paging  
+- Simulated a **1MB virtual memory space** with 1KB pages  
+- Added **TLB caching** and kernel-level page allocation/freeing  
+- Implemented paging algorithms and page table management  
 
-##Technical Highlights
+### System Calls  
+- Built user–kernel interface for  
+  `Sleep()`, `Exit()`, `SendMessage()`, `AllocateMemory()`, and more  
+- Ensured seamless **userland ↔ kernelland** transitions  
 
-###Language: Java (JDK 23)
+---
 
-###IDE: IntelliJ IDEA
+## Technical Highlights
 
-###Architecture: Object-Oriented, Multi-threaded Simulation
+| Category | Details |
+|-----------|----------|
+| **Language** | Java (JDK 23) |
+| **IDE** | IntelliJ IDEA |
+| **Architecture** | Object-Oriented, Multi-threaded Simulation |
+| **Synchronization** | Java Threads, Semaphores, Timer-based Interrupts |
+| **Design Focus** | Process Lifecycle, IPC, Hardware Abstraction |
 
-###Synchronization: Java Threads, Semaphores, Timer-based interrupts
+---
 
-###Design Focus: OS process lifecycle, interprocess coordination, and hardware abstraction
+## Achievements
+Implemented **90–100%** of all rubric-defined OS features across 5 incremental stages:
 
-##Achievements
+1.  Core Kernel & Cooperative Multitasking  
+2.  Priority Scheduling and Sleep System Call  
+3.  Virtual File System and Device Interface  
+4.  Interprocess Communication (Message Passing)  
+5.  Paging and Memory Virtualization  
 
-Implemented 90–100% of all rubric-defined OS features across 5 incremental stages:
+ Achieved full **process isolation**, correct **page mapping**, and consistent **device I/O**.  
+ Demonstrated comprehensive understanding of **CPU scheduling**, **memory management**, **IPC**, and **kernel–userland boundaries**.
 
-Core Kernel & Cooperative Multitasking
-
-Priority Scheduling and Sleep System Call
-
-Virtual File System and Device Interface
-
-Interprocess Communication (Message Passing)
-
-Paging and Memory Virtualization
-
-Achieved full process isolation, proper page mapping, and consistent I/O device interaction.
-
-Demonstrated comprehensive understanding of CPU scheduling, memory mapping, IPC, and kernel–userland boundaries.
