@@ -9,11 +9,22 @@ public class Kernel extends Process implements Device {
     private PCB currentProcess;
     private boolean[] physicalUsed = new boolean[1024];
     //private LinkedList<Integer> freeList = new LinkedList<>();
+    private int swapFile;
+    private int nextSwapPage;
 
     public Kernel() {
         super();
         scheduler = new Scheduler();
 
+        //open the swap file on startup
+        swapFile = vfs.Open("swapFile.sys");
+        nextSwapPage = 0;
+    }
+
+    private int allocateSwapPageNumber() {
+        //page = 1024 bytes
+        //not reusing swap file
+        return nextSwapPage++;
     }
 
     //accessor!
@@ -262,10 +273,18 @@ public class Kernel extends Process implements Device {
             return;
         }
 
-        //if the mapping already exists, just update TLB
-        int pp = pcb.pageTable[virtualPage];
-        if (pp != -1) {
-            Hardware.updateTLB(virtualPage, pp);
+        //check if the virtual page had been allocated
+        VirtualToPhysicalMapping mapping = pcb.pageTable[virtualPage];
+        if (mapping == null) {
+            System.out.println("Segfault : accessing unallocated virtual page");
+            Exit();
+            scheduler.SwitchProcess();
+            return;
+        }
+
+        //if physical page is already exist (only TLB miss)
+        if (mapping.physicalPage != -1) {
+            Hardware.updateTLB(virtualPage, mapping.physicalPage);
             return;
         }
 
@@ -279,8 +298,11 @@ public class Kernel extends Process implements Device {
             return;
         }
 
-        //add mapping
-        pcb.pageTable[virtualPage] = physicalPage;
+        //    TODO: 만약 diskPage != -1이면 swapFile에서 이 물리 페이지로 로드
+        //    TODO: diskPage == -1이면 이 물리 페이지를 0으로 채우기
+
+        //add physical page number to mapping
+        mapping.physicalPage = physicalPage;
         physicalUsed[physicalPage] = true;
 
         //update TLB
@@ -320,7 +342,7 @@ public class Kernel extends Process implements Device {
         int startVirtual = -1;
         int count = 0;
         for (int i = 0; i < pcb.pageTable.length; i++) {
-            if (pcb.pageTable[i] == -1) {
+            if (pcb.pageTable[i] == null) {
                 if (count == 0) startVirtual = i;
                 count++;
                 if (count == numPages) break;
@@ -331,24 +353,15 @@ public class Kernel extends Process implements Device {
         }
 
         //can't find enough space
-        if (startVirtual == -1 || count == numPages) {
+        if (startVirtual == -1 || count != numPages) { //?? == or !=
             return -1;
         }
 
-        //physical page allocation and registration for mapping
+        //lazy allocation
         for (int i = 0; i < numPages; i++) {
-            int pp = findFreePhysicalPage();
-            if (pp == -1) {
-                FreeMemory(startVirtual * pageSize, i * pageSize);
-                return -1;
-            }
             //mapping the found physical page into virtual
-            pcb.pageTable[startVirtual + i] = pp;
-            //alert for using
-            physicalUsed[pp] = true;
-            Hardware.updateTLB(startVirtual + i, pp);
+            pcb.pageTable[startVirtual + i] = new VirtualToPhysicalMapping();
         }
-
         return startVirtual * pageSize; //return virtual address by byte
     }
 
@@ -369,29 +382,44 @@ public class Kernel extends Process implements Device {
 
         for (int i = 0; i < numPages; i++) {
             int vp = startVirtual + i;
-            int pp = pcb.pageTable[vp];
-            if (pp != -1) {
-                pcb.pageTable[vp] = -1;
-                freePhysicalPage(pp);
+            VirtualToPhysicalMapping mapping = pcb.pageTable[vp];
+
+            if (mapping == null) {
+                //never allocated
+                continue;
             }
+
+            //if physical page exists, free it
+            if (mapping.physicalPage != -1) {
+                freePhysicalPage(mapping.physicalPage);
+            }
+
+            //set pageTable slot to null (free the mapping)
+            pcb.pageTable[vp] = null;
         }
 
         return true;
     }
 
-    private void FreeAllMemory(PCB currentlyRunning) {
-        if (currentlyRunning == null) return;
+    private void FreeAllMemory(PCB pcb) {
+        if (pcb == null) return;
 
-        for (int vp = 0; vp < currentlyRunning.pageTable.length; vp++) {
-            int pp = currentlyRunning.pageTable[vp];
-            if (pp != -1) {
-                //eliminate virtual page mapping
-                currentlyRunning.pageTable[vp] = -1;
+        for (int vp = 0; vp < pcb.pageTable.length; vp++) {
+            VirtualToPhysicalMapping mapping = pcb.pageTable[vp];
 
-                //deallocate physical page
-                freePhysicalPage(pp);
+            //never did allocated
+            if (mapping == null) {
+                continue;
             }
+
+            //free physical page
+            if (mapping.physicalPage != -1) {
+                freePhysicalPage(mapping.physicalPage);
+            }
+
+            //free mapping too
+            pcb.pageTable[vp] = null;
         }
     }
-
 }
+

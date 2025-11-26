@@ -33,6 +33,10 @@ public class Scheduler {
         }, 250, 250);
     }
 
+    public PCB getRandomProcess(PCB exclude) {
+
+    }
+
     public PCB getNextProcess() {
         if (!realTimeQueue.isEmpty()) {
             return realTimeQueue.removeFirst();

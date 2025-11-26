@@ -11,17 +11,17 @@ public class PCB { // Process Control Block
     public String name;
     public LinkedList<KernelMessage> messageQueue = new LinkedList<>();
     public boolean isWaitingForMessage = false;
-    public int[] pageTable = new int[100];
-
+    //public int[] pageTable = new int[100];
+    public VirtualToPhysicalMapping[] pageTable = new VirtualToPhysicalMapping[100];
 
     public PCB(UserlandProcess ulp, int pid) {
+        this();
         this.pid = pid;
-        this.name = ulp.getClass().getSimpleName(); //ping //KLP = Kernel Level Process(PCB)
-        //initDeviceIds();
-        //initPageTable();
+        this.name = ulp.getClass().getSimpleName();
+        this.up = ulp;
     }
 
-    PCB(UserlandProcess up, OS.PriorityType priority) {
+    public PCB(UserlandProcess up, OS.PriorityType priority) {
         this(); //call default constructor -> do deviceIds initiation first
         this.pid = nextPid++; //give Process IDentifier
         this.priority = priority;
@@ -40,7 +40,7 @@ public class PCB { // Process Control Block
         }
 
         for (int i = 0; i < pageTable.length; i++) {
-            pageTable[i] = -1;
+            pageTable[i] = null;
         }
     }
 
