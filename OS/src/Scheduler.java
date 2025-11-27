@@ -34,7 +34,26 @@ public class Scheduler {
     }
 
     public PCB getRandomProcess(PCB exclude) {
+        //gather all PCBs from the 3 queues
+        ArrayList<PCB> candidates = new ArrayList<>();
 
+        for(PCB p : realTimeQueue) {
+            if(p != exclude) candidates.add(p);
+        }
+        for (PCB p : interactiveQueue) {
+            if(p != exclude) candidates.add(p);
+        }
+        for (PCB p : backgroundQueue) {
+            if(p != exclude) candidates.add(p);
+        }
+
+        //if no candidates exist, return null
+        if(candidates.isEmpty()) {
+            return null;
+        }
+
+        Random r = new Random();
+        return candidates.get(r.nextInt(candidates.size()));
     }
 
     public PCB getNextProcess() {
