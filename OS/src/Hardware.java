@@ -95,4 +95,25 @@ public class Hardware {
         }
     }
 
+    public static byte[] readPhysicalMemory(int physicalPageNum) {
+        int pageSize = 1024;
+        byte[] buf = new byte[pageSize];
+
+        int start = physicalPageNum * pageSize;
+        for (int i = 0; i < pageSize; i++) {
+            buf[i] = memory[start + i];
+        }
+
+        return buf;
+    }
+
+    public static void writePhysicalMemory(int physicalPageNum, byte[] data) {
+        int pageSize = 1024;
+        int start = physicalPageNum * pageSize;
+
+        for (int i = 0; i < pageSize; i++) {
+            memory[start + i] = data[i];
+        }
+    }
+
 }

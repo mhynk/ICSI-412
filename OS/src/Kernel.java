@@ -267,7 +267,7 @@ public class Kernel extends Process implements Device {
         //check virtual page availability
         //check TLB hit
         if (virtualPage < 0 || virtualPage >= pcb.pageTable.length) {
-            System.out.println("Segfault : invalid virtual page");
+            System.out.println("Segfault : invalid virtual page" + virtualPage);
             Exit();
             scheduler.SwitchProcess();
             return;
@@ -288,18 +288,37 @@ public class Kernel extends Process implements Device {
             return;
         }
 
-        //find the empty physical page
-        //if TLB miss
+        //find the free frame if there is no physical page
         int physicalPage = findFreePhysicalPage();
+        //if there is no free frame, swap out other process page, make frame
         if (physicalPage == -1) {
-            System.out.println("Segfault : no free physical page");
-            Exit();
-            scheduler.SwitchProcess();
-            return;
+            physicalPage = evictPageAndGetFrame(pcb);
+            if (physicalPage == -1) {
+                System.out.println("Segfault : no free physical page and no victim to evict");
+                Exit();
+                scheduler.SwitchProcess();
+                return;
+            }
         }
 
-        //    TODO: 만약 diskPage != -1이면 swapFile에서 이 물리 페이지로 로드
-        //    TODO: diskPage == -1이면 이 물리 페이지를 0으로 채우기
+        //if this virtual page had saved to disk, swap in
+        if (mapping.diskPage != -1) {
+            //swap in : from disk to physical page
+            byte[] buf = new byte[1024];
+
+            //move to the exact diskPage location and read
+            vfs.Seek(swapFile, mapping.diskPage * 1024);
+            buf = vfs.Read(swapFile, 1024);
+
+            //put into physical memory
+            Hardware.writePhysicalMemory(physicalPage, buf);
+
+            mapping.diskPage = -1;
+        } else {
+            //if it is the first access, even not exist in disk,
+            byte[] zero = new byte[1024]; //initialized to 0
+            Hardware.writePhysicalMemory(physicalPage, zero);
+        }
 
         //add physical page number to mapping
         mapping.physicalPage = physicalPage;
@@ -307,6 +326,66 @@ public class Kernel extends Process implements Device {
 
         //update TLB
         Hardware.updateTLB(virtualPage, physicalPage);
+    }
+
+    //swap out the one of the page from other process that exclude the current process pcb
+    //and return the physical frame number
+    private int evictPageAndGetFrame(PCB currentPCB) {
+        PCB victim = scheduler.getRandomProcess(currentPCB);
+        if (victim == null) {
+            return -1;
+        }
+
+        //randomly choose the virtual page that have physical page in the process
+        int victimVP = chooseRandomAllocatedPage(victim);
+        if (victimVP == -1) {
+            return -1;
+        }
+
+        VirtualToPhysicalMapping vMap = victim.pageTable[victimVP];
+        int physical = vMap.physicalPage;
+
+        if (physical == -1) {
+            return -1;
+        }
+
+        //allocate new disk page number
+        int diskPage = allocateSwapPageNumber();
+        vMap.diskPage = diskPage;
+
+        //read the physical memory and sae to swapFile
+        byte[] buf = Hardware.readPhysicalMemory(physical); //page size = 1024
+
+        vfs.Seek(swapFile, diskPage * 1024);
+        vfs.Write(swapFile, buf);
+
+        //this page is disappeared in physical memory in victim
+        vMap.physicalPage = -1;
+
+        //return physical fram to free list
+        freePhysicalPage(physical);
+
+        //and give this frame to new requester
+        return physical;
+    }
+
+    //pick virtual page which have real physical page from victim process randomly and return
+    private int chooseRandomAllocatedPage(PCB victim) {
+        java.util.ArrayList<Integer> candidates = new java.util.ArrayList<>();
+
+        for (int vp = 0; vp < victim.pageTable.length; vp++) {
+            VirtualToPhysicalMapping mapping = victim.pageTable[vp];
+            if (mapping != null && mapping.physicalPage != -1) {
+                candidates.add(vp);
+            }
+        }
+
+        if (candidates.isEmpty()) {
+            return -1;
+        }
+
+        java.util.Random rand = new java.util.Random();
+        return candidates.get(rand.nextInt(candidates.size()));
     }
 
     private int findFreePhysicalPage() {
